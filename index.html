@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Casa MC · um percurso pela casa · Aschip</title>
+<meta name="description" content="Percorra a Casa MC, uma moradia de dois pisos em Angola desenhada pela Aschip: da rua à sala de pé-direito duplo.">
+<link rel="icon" href="assets/aschip-marca.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="scrollcraft.css">
+<style>
+  @font-face { font-family: "Roboto"; src: url("assets/fonts/Roboto-Light.ttf") format("truetype"); font-weight: 300; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Roboto"; src: url("assets/fonts/Roboto-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Roboto"; src: url("assets/fonts/Roboto-Medium.ttf") format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Roboto"; src: url("assets/fonts/Roboto-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+  @font-face { font-family: "Roboto"; src: url("assets/fonts/Roboto-LightItalic.ttf") format("truetype"); font-weight: 300; font-style: italic; font-display: swap; }
+  /* Aschip: paper, ink, blue linework, red for "you are here" and the one action. */
+  :root {
+    --sc-canvas:     #F2F4F3;
+    --sc-surface:    #E4E8E8;
+    --sc-ink:        #1B232A;
+    --sc-ink-soft:   #4A5761;
+    --sc-accent:     #C1183A;
+    --sc-accent-ink: #FFFFFF;
+    --sc-font-display: "Roboto", system-ui, sans-serif;
+    --sc-font-text:    "Roboto", system-ui, sans-serif;
+    --sc-font-mono:    "Roboto Mono", ui-monospace, monospace;
+    --sc-shadow-color: 205 25% 20%;
+
+    --blue: #1B8ABD;          /* drawing ink: cotas, linework */
+    --blue-deep: #136A92;     /* blue that has to carry small text on paper */
+    --red: #C1183A;
+    --paper: #F2F4F3;
+    --paper-2: #E6EAEA;
+    --white: #FAFBFA;
+    --night: #151B20;
+    --folio-w: 13.5rem;
+    --rail: 0px;
+  }
+  @media (min-width: 1100px) { :root { --rail: calc(var(--folio-w) + 2.5rem); } }
+
+  html { background: var(--paper); }
+  body { background: var(--paper); color: var(--sc-ink); font-weight: 400; }
+  ::selection { background: var(--blue); color: #fff; }
+  a { color: inherit; text-underline-offset: 0.22em; text-decoration-thickness: 1px; }
+  :focus-visible { outline: 2px solid var(--red); outline-offset: 3px; border-radius: 2px; }
+
+  .mono { font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); letter-spacing: 0.02em; }
+
+  /* Each chapter owns its ground. Hard cuts, no drift. */
+  .ch { position: relative; background: var(--ground, var(--paper)); }
+  .ch--paper  { --ground: var(--paper); }
+  .ch--stone  { --ground: var(--paper-2); }
+  .ch--white  { --ground: var(--white); }
+  .ch--night  { --ground: var(--night); --sc-ink: #EEF2F3; --sc-ink-soft: #AEB9C0; color: var(--sc-ink); }
+
+  /* Content leaves the left margin to the folio on wide screens. */
+  .page { padding-left: var(--rail); padding-right: var(--sc-gutter); }
+  @media (max-width: 1099px) { .page { padding-left: var(--sc-gutter); } }
+
+  h1, h2, h3 { font-weight: 300; }
+  .ch-title { font-size: var(--sc-t-3xl); line-height: 1; letter-spacing: var(--sc-track-tight); margin: 0; font-weight: 300; text-wrap: balance; }
+  .ch p { text-wrap: pretty; }
+  figure { margin: 0; }
+  figcaption { margin-top: var(--sc-3); color: var(--sc-ink-soft); }
+  figcaption b { color: var(--sc-ink); font-weight: 500; }
+
+  /* ------------------------------------------------------------ title page */
+  .title { --ground: var(--paper); }
+  .title [data-sc-stage] { overflow: hidden; }
+  .title__grid, .title__draw { position: absolute; pointer-events: none; }
+  .title__grid {
+    inset: -12% -4%;
+    background-image:
+      linear-gradient(to right, rgb(27 138 189 / .10) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(27 138 189 / .10) 1px, transparent 1px),
+      linear-gradient(to right, rgb(27 138 189 / .05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(27 138 189 / .05) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+    transform: translate3d(var(--gx, 0px), var(--gy, 0px), 0);
+  }
+  .title__draw {
+    right: var(--sc-gutter); bottom: 6vh;
+    width: min(64vw, 1100px); aspect-ratio: 1600 / 790;
+  }
+  .title__draw { transform: translate3d(var(--dx, 0px), var(--dy, 0px), 0); }
+  .title__stamp {
+    position: absolute; z-index: 6; right: calc(var(--sc-gutter) * 0.6); bottom: 3vh;
+    padding: 0.7rem 1rem; background: rgb(250 251 250 / .92); border: 1px solid rgb(27 35 42 / .55);
+    display: grid; gap: 0.15rem; min-width: 15rem;
+    transform: translate3d(var(--fx, 0px), var(--fy, 0px), 0);
+    box-shadow: 0 8px 22px -12px hsl(205 30% 15% / .4);
+  }
+  .title__stamp p { margin: 0; color: var(--sc-ink-soft); }
+  .title__stamp b { color: var(--sc-ink); font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; }
+  .title__draw svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .el { fill: none; stroke: #33414B; stroke-width: 2; stroke-linecap: square; vector-effect: non-scaling-stroke; }
+  .el--thin { stroke-width: 1; stroke: #6A7881; }
+  .el--heavy { stroke-width: 3; stroke: var(--sc-ink); }
+  .el--glass { fill: rgb(27 138 189 / .10); stroke: #33414B; }
+  .el--glass.el--lit { fill: rgb(27 138 189 / calc(.10 + var(--glass, 0) * .22)); }
+  .el[data-draw] { stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--d, 1)); }
+  .cota { fill: none; stroke: var(--blue); stroke-width: 1.25; vector-effect: non-scaling-stroke; }
+  .cota-t { fill: var(--blue-deep); font-family: "Roboto Mono", monospace; font-size: 22px; }
+  .cota-t--lead { fill: var(--sc-ink); font-family: "Roboto", sans-serif; font-size: 22px; }
+  .cotas > g { opacity: var(--co, 0); }
+
+  .title__copy {
+    position: absolute; z-index: 5;
+    left: max(var(--rail), var(--sc-gutter)); top: clamp(5rem, 16vh, 10rem);
+    max-width: 34rem;
+  }
+  .brand { display: flex; align-items: center; gap: var(--sc-3); margin-bottom: var(--sc-7); text-decoration: none; }
+  .brand img { width: 44px; height: auto; }
+  .brand span { font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; font-size: var(--sc-t-sm); }
+  .title h1 { font-size: var(--sc-t-4xl); line-height: .92; letter-spacing: -0.045em; margin: 0; font-weight: 300; }
+  .title h1 b { font-weight: 700; }
+  .title__lede { margin: var(--sc-5) 0 0; font-size: var(--sc-t-lg); line-height: 1.45; color: var(--sc-ink-soft); max-width: 26ch; font-weight: 300; }
+
+  /* ------------------------------------------------------------- chegada */
+  .arrive { padding-block: var(--sc-10) var(--sc-9); }
+  .arrive__grid { display: grid; grid-template-columns: minmax(16rem, 0.8fr) 2fr; gap: var(--sc-8); align-items: end; }
+  .arrive__text { padding-bottom: var(--sc-8); }
+  .arrive__text p { margin: var(--sc-5) 0 0; max-width: 34ch; color: var(--sc-ink-soft); font-size: var(--sc-t-lg); line-height: 1.5; font-weight: 300; }
+  .frame { position: relative; overflow: hidden; background: var(--paper-2); }
+  .frame img { display: block; width: 100%; height: 100%; object-fit: cover; max-width: none; }
+  .arrive__frame { aspect-ratio: 16 / 10; }
+  .arrive__frame img { height: 118%; margin-top: -9%; }
+
+  /* ------------------------------------------------------------- entrada */
+  .door { padding-block: var(--sc-9); }
+  .door__grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: var(--sc-8); align-items: center; }
+  .door__media { position: relative; padding-bottom: 14%; }
+  .door__main { aspect-ratio: 3 / 2; }
+  .door__inset {
+    position: absolute; right: -9%; bottom: 0; width: 46%; aspect-ratio: 3 / 2;
+    box-shadow: 0 14px 34px -12px hsl(205 30% 15% / .45); border: 6px solid var(--paper-2);
+  }
+  .door__text p { margin: var(--sc-5) 0 0; max-width: 36ch; color: var(--sc-ink-soft); font-size: var(--sc-t-lg); line-height: 1.5; font-weight: 300; }
+  .door__spec { display: flex; gap: var(--sc-6); margin-top: var(--sc-6); padding-top: var(--sc-4); border-top: 1px solid rgb(27 35 42 / .18); }
+  .door__spec dt { color: var(--sc-ink-soft); }
+  .door__spec dd { margin: var(--sc-1) 0 0; font-size: var(--sc-t-xl); font-weight: 300; letter-spacing: -0.01em; }
+
+  /* -------------------------------------------------------------- cozinha */
+  .social [data-sc-stage] { display: flex; align-items: center; clip-path: inset(0 0 0 var(--rail)); }
+  .rail { gap: clamp(1.5rem, 3vw, 3.5rem); padding-inline: var(--rail) var(--sc-gutter); align-items: flex-end; }
+  @media (max-width: 1099px) { .rail { padding-left: var(--sc-gutter); } }
+  .rail > * { flex: 0 0 auto; }
+  .rail__lead { width: min(26rem, 80vw); align-self: center; }
+  .rail__lead p { margin: var(--sc-5) 0 0; color: var(--sc-ink-soft); font-size: var(--sc-t-lg); line-height: 1.5; font-weight: 300; }
+  .room { width: clamp(20rem, 40vw, 40rem); }
+  .room .frame { aspect-ratio: 3 / 2; }
+  .room--tall .frame { aspect-ratio: 4 / 5; }
+  .room--tall { width: clamp(16rem, 28vw, 28rem); }
+  .rail__note { width: min(22rem, 76vw); align-self: center; color: var(--sc-ink-soft); font-size: var(--sc-t-lg); line-height: 1.5; font-weight: 300; }
+  @media (prefers-reduced-motion: no-preference) {
+    .rail > .room { opacity: calc(0.55 + 0.45 * var(--settle, 1)); transform: translateY(calc((1 - var(--settle, 1)) * 18px)); }
+  }
+
+  /* ----------------------------------------------------------------- pausa */
+  .hush { min-height: 92svh; display: grid; place-items: center; text-align: center; padding-block: var(--sc-9); }
+  .hush p { font-size: var(--sc-t-2xl); font-weight: 300; letter-spacing: -0.02em; margin: 0; }
+  .hush__tick { display: block; width: 1px; height: 4.5rem; background: var(--blue); margin: var(--sc-6) auto 0; transform-origin: bottom; }
+
+  /* ------------------------------------------------------------------ sala */
+  .void [data-sc-stage] { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--sc-8); }
+  .void__copy { position: relative; width: min(100%, calc(32rem + var(--rail) + var(--sc-gutter))); height: 70svh; justify-self: end; padding-left: var(--rail); }
+  .void__copy > div { position: absolute; left: var(--rail); right: 0; top: 50%; translate: 0 -50%; }
+  .void__copy h2 { margin: 0; }
+  .void__copy p { margin: var(--sc-5) 0 0; font-size: var(--sc-t-lg); line-height: 1.55; color: var(--sc-ink-soft); font-weight: 300; letter-spacing: 0.005em; }
+  .void__copy .big { font-size: var(--sc-t-2xl); line-height: 1.1; color: var(--sc-ink); letter-spacing: -0.02em; }
+  .void__fig { position: relative; height: 88svh; aspect-ratio: 3 / 4; margin-right: calc(var(--sc-gutter) + 7.5rem); }
+  .void__frame {
+    position: absolute; inset: 0; overflow: hidden; background: #0E1317;
+    clip-path: inset(calc(var(--open-top, 0.62) * 100%) 0 0 0);
+  }
+  .void__frame img { width: 100%; height: 100%; object-fit: cover; display: block; max-width: none;
+    transform: translate3d(0, calc(var(--tilt, 1) * 7%), 0) scale(1.08); transform-origin: 50% 100%; }
+  .ruler { position: absolute; left: calc(100% + 1.25rem); top: 0; bottom: 0; width: 4.5rem; pointer-events: none; }
+  .ruler__line { position: absolute; left: 0; bottom: 0; width: 1px; height: 100%; background: #4FB0DC;
+    transform-origin: bottom; transform: scaleY(calc(1 - var(--open-top, 0.62))); }
+  .ruler__line::before, .ruler__line::after { content: ""; position: absolute; left: -6px; width: 13px; height: 1px; background: #4FB0DC; }
+  .ruler__line::before { bottom: 0; }
+  .ruler__line::after { top: 0; }
+  .ruler__mark { position: absolute; left: 0; color: #9FD3EC; font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); white-space: nowrap; }
+  .ruler__mark::before { content: ""; display: inline-block; width: 10px; height: 1px; background: #4FB0DC; vertical-align: middle; margin-right: 8px; }
+  .ruler__mark--base { bottom: -0.6em; }
+  .ruler__mark--level { top: var(--level-y, 46%); translate: 0 -0.7em; opacity: var(--level-o, 0); line-height: 1.4; }
+  .ruler__sub { display: block; padding-left: 18px; color: #AEB9C0; }
+  .leader { position: absolute; left: 0; width: 100%; top: var(--level-y, 46%); height: 0;
+    border-top: 1px dashed rgb(159 211 236 / .85); opacity: var(--level-o, 0); }
+
+  /* -------------------------------------------------------------- colophon */
+  .end { padding-block: var(--sc-10) var(--sc-7); }
+  .end__fig .frame { aspect-ratio: 21 / 9; }
+  .end__grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: var(--sc-9); margin-top: var(--sc-9); align-items: start; }
+  .end__claim { font-size: var(--sc-t-2xl); line-height: 1.12; letter-spacing: -0.025em; margin: 0; font-weight: 300; text-wrap: balance; }
+  .end__ask { margin: var(--sc-6) 0 0; font-size: var(--sc-t-lg); line-height: 1.5; max-width: 34ch; font-weight: 300; }
+  .end__ask a { white-space: nowrap; color: var(--red); font-weight: 500; text-decoration-thickness: 2px; text-underline-offset: 0.25em; transition: color 140ms var(--sc-ease-out); }
+  @media (hover: hover) and (pointer: fine) { .end__ask a:hover { color: #9A1230; } }
+  .end__ask a:active { color: #7E0F28; }
+  .ficha { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  /* ------------------------------------------------------------- maquete */
+  .model { padding-block: var(--sc-9); }
+  .model__grid { display: grid; grid-template-columns: minmax(16rem, 0.75fr) 1.9fr; grid-template-areas: "text fig" "ctl fig"; column-gap: var(--sc-8); align-items: center; }
+  .model__text { grid-area: text; align-self: end; }
+  .model__fig { grid-area: fig; }
+  .model__ctl { grid-area: ctl; align-self: start; }
+  .model__text p { margin: var(--sc-5) 0 0; max-width: 34ch; color: var(--sc-ink-soft); font-size: var(--sc-t-lg); line-height: 1.5; font-weight: 300; }
+  .model__ctl { margin-top: var(--sc-7); display: grid; gap: var(--sc-2); max-width: 22rem; }
+  .model__row { display: flex; justify-content: space-between; align-items: baseline; }
+  .model__row--gap { margin-top: var(--sc-5); }
+  .model__modes { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgb(27 35 42 / .35); margin-bottom: var(--sc-5); }
+  .model__mode { all: unset; box-sizing: border-box; text-align: center; padding: 0.7rem 0.5rem; min-height: 44px; font-weight: 500; cursor: pointer; color: var(--sc-ink-soft);
+    transition: background-color 140ms var(--sc-ease-out), color 140ms var(--sc-ease-out); }
+  .model__mode[aria-pressed="true"] { background: var(--sc-ink); color: #FAFBFA; }
+  .model__mode:disabled { cursor: default; opacity: .5; }
+  @media (hover: hover) and (pointer: fine) { .model__mode:not([aria-pressed="true"]):not(:disabled):hover { background: rgb(27 35 42 / .07); color: var(--sc-ink); } }
+  .model__mode:focus-visible, .model__btn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .model__pane[hidden] { display: none; }
+  .model__btn { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 1rem;
+    border: 1px solid rgb(27 35 42 / .4); font-weight: 500; cursor: pointer; background: #FAFBFA; color: var(--sc-ink);
+    transition: background-color 140ms var(--sc-ease-out), transform 120ms var(--sc-ease-out); }
+  .model__btn--sq { width: 44px; padding: 0; font-size: 1.3rem; }
+  .model__btn:active { transform: translateY(1px); }
+  .model__btn:disabled { cursor: default; opacity: .5; }
+  .model__btn[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+  @media (hover: hover) and (pointer: fine) { .model__btn:not(:disabled):hover { background: rgb(27 138 189 / .1); } .model__btn[aria-pressed="true"]:hover { background: #9A1230; } }
+  .model__zoom { align-items: center; }
+  .model__zoombtns { display: inline-flex; gap: var(--sc-2); }
+  .model__tip { color: var(--sc-ink-soft); text-align: right; max-width: 14rem; }
+  .model__row output { color: var(--blue-deep); font-weight: 500; }
+  .model__ticks { display: flex; justify-content: space-between; color: var(--sc-ink-soft); }
+  .model input[type=range] { width: 100%; accent-color: var(--red); height: 2rem; cursor: pointer; margin: 0; }
+  .model input[type=range]:disabled { cursor: default; opacity: .5; }
+  .model__frame { aspect-ratio: 4 / 3; background: linear-gradient(#EEF1F1, #DCE1E1); }
+  .model__frame canvas, .model__poster { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .model__poster { object-fit: cover; transition: opacity 400ms var(--sc-ease-out); }
+  .model__frame.is-live .model__poster { opacity: 0; pointer-events: none; }
+  .model__frame.is-static canvas { display: none; }
+  @media (hover: hover) and (pointer: fine) { .model__frame.is-live canvas { cursor: grab; } .model__frame.is-live canvas:active { cursor: grabbing; } }
+  @media not ((hover: hover) and (pointer: fine)) { .model__hint { display: none; } }
+  .model__status { position: absolute; left: var(--sc-4); bottom: var(--sc-4); margin: 0; padding: 0.35rem 0.6rem; background: rgb(250 251 250 / .9); color: var(--sc-ink); }
+  .model__status[hidden] { display: none; }
+
+  .ficha caption { text-align: left; padding-bottom: var(--sc-3); color: var(--sc-ink-soft); }
+  .ficha th, .ficha td { text-align: left; padding: 0.55rem 0; border-top: 1px solid rgb(27 35 42 / .14); font-weight: 400; vertical-align: top; }
+  .ficha th { color: var(--sc-ink-soft); width: 42%; font-weight: 400; padding-right: var(--sc-4); }
+  .ficha td { font-family: var(--sc-font-mono); font-size: var(--sc-t-sm); }
+  .colophon { display: flex; flex-wrap: wrap; gap: var(--sc-4) var(--sc-7); align-items: center; margin-top: var(--sc-9); padding-top: var(--sc-5); border-top: 1px solid rgb(27 35 42 / .14); color: var(--sc-ink-soft); }
+  .colophon img { width: 34px; height: auto; }
+  .colophon p { margin: 0; }
+
+  /* ------------------------------------------------------------- the folio */
+  .folio {
+    position: fixed; z-index: 60; left: 1.25rem; top: 50%; translate: 0 -50%;
+    width: var(--folio-w); padding: var(--sc-4);
+    background: #FAFBFA; color: #1B232A;
+    border: 1px solid rgb(27 35 42 / .12);
+    box-shadow: 0 10px 30px -14px hsl(205 30% 15% / .35);
+    --sc-ink: #1B232A; --sc-ink-soft: #4A5761;
+  }
+  .folio__toggle { all: unset; display: none; }
+  .folio__head { display: grid; gap: 2px; margin-bottom: var(--sc-3); min-height: 2.6rem; }
+  .folio__no { color: var(--blue-deep); }
+  .folio__name { font-size: var(--sc-t-base); font-weight: 500; line-height: 1.2; }
+  .plan { display: block; width: 100%; height: auto; }
+  .plan .wall { fill: none; stroke: #1B232A; stroke-width: 7; }
+  .plan .wall--thin { stroke-width: 3; stroke: #56636C; }
+  .plan .lot { fill: none; stroke: #8A969D; stroke-width: 2; stroke-dasharray: 10 8; }
+  .plan .garage { fill: rgb(27 35 42 / .04); stroke: #56636C; stroke-width: 3; stroke-dasharray: 14 10; }
+  .plan .room-hit { fill: rgb(27 138 189 / 0); stroke: none; cursor: pointer; transition: fill 160ms var(--sc-ease-out); }
+  .plan .room-hit.is-seen { fill: rgb(193 24 58 / .10); }
+  .plan .room-hit.is-here { fill: rgb(27 138 189 / .22); }
+  @media (hover: hover) and (pointer: fine) { .plan a:hover .room-hit { fill: rgb(27 138 189 / .32); } }
+  .plan a:focus-visible { outline: none; }
+  .plan a:focus-visible .room-hit { fill: rgb(27 138 189 / .32); stroke: var(--red); stroke-width: 6; }
+  .plan .trace { fill: none; stroke: var(--red); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 6 9; }
+  .plan .dot { fill: var(--red); stroke: #FAFBFA; stroke-width: 6; }
+  .plan .dot-halo { fill: rgb(193 24 58 / .18); }
+  .plan .north { fill: none; stroke: #56636C; stroke-width: 3; }
+  .plan text { font-family: "Roboto Mono", monospace; font-size: 34px; fill: #56636C; }
+  .folio__index { list-style: none; margin: var(--sc-3) 0 0; padding: var(--sc-3) 0 0; border-top: 1px solid rgb(27 35 42 / .12); display: grid; gap: 1px; counter-reset: c; }
+  .folio__index a { display: flex; gap: var(--sc-2); text-decoration: none; padding: 0.3rem 0.25rem; margin-inline: -0.25rem; color: var(--sc-ink-soft); font-size: var(--sc-t-sm); border-radius: 3px; transition: color 140ms var(--sc-ease-out), background-color 140ms var(--sc-ease-out); }
+  .folio__index a span { font-family: var(--sc-font-mono); font-size: var(--sc-t-xs); color: #6A7881; min-width: 1.4rem; padding-top: 0.12em; }
+  .folio__index a[aria-current="step"] { color: #1B232A; font-weight: 500; }
+  .folio__index a[aria-current="step"] span { color: var(--red); }
+  @media (hover: hover) and (pointer: fine) { .folio__index a:hover { background: rgb(27 138 189 / .08); color: #1B232A; } }
+
+  /* ------------------------------------------------------------ < 1100px */
+  @media (max-width: 1099px) {
+    .folio { top: auto; bottom: max(0.75rem, env(safe-area-inset-bottom)); left: 0.75rem; translate: none; width: auto; padding: 0; }
+    .folio__toggle { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.9rem 0.5rem 0.5rem; min-height: 48px; cursor: pointer; }
+    .folio__mini { width: 40px; height: 52px; }
+    .folio__toggle .folio__head { margin: 0; min-height: 0; }
+    .folio__panel { display: none; padding: 0 var(--sc-4) var(--sc-4); width: min(17rem, calc(100vw - 1.5rem)); }
+    .folio.is-open .folio__panel { display: block; }
+    .folio.is-open .folio__toggle { padding-bottom: var(--sc-3); }
+    .folio__panel .folio__head { display: none; }
+    .folio__panel .plan { max-height: 46svh; width: auto; margin-inline: auto; }
+    .folio__index a { padding-block: 0.6rem; }
+
+    .title__draw { width: calc(100vw - 2 * var(--sc-gutter)); left: var(--sc-gutter); right: auto; bottom: auto; top: max(44svh, 19.5rem); }
+    .title__stamp { right: var(--sc-gutter); bottom: auto; top: calc(max(44svh, 19.5rem) + 49vw + 1.5rem); min-width: 0; }
+    .title__copy { left: var(--sc-gutter); right: var(--sc-gutter); top: clamp(4rem, 10svh, 6rem); }
+  }
+  @media (max-width: 1099px) and (max-height: 720px) { .title__stamp { display: none; } }
+  @media (max-width: 860px) {
+    .title h1 { font-size: var(--sc-t-3xl); }
+    .brand { margin-bottom: var(--sc-6); }
+    .arrive { padding-block: var(--sc-8) var(--sc-7); }
+    .arrive__grid, .door__grid, .end__grid { grid-template-columns: 1fr; gap: var(--sc-6); }
+    .arrive__text { padding-bottom: 0; }
+    .arrive__frame { aspect-ratio: 4 / 3; }
+    .door__media { padding-bottom: 22%; margin-right: 6%; }
+    .door__inset { right: -6%; width: 58%; }
+    .room { width: 78vw; }
+    .room--tall { width: 64vw; }
+    .void [data-sc-stage] { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-items: start; gap: var(--sc-4); padding-top: 4.5rem; }
+    .void__copy { padding-left: 0; justify-self: stretch; width: auto; height: 13.5rem; margin-inline: var(--sc-gutter); }
+    .void__copy > div { left: 0; top: 0; translate: none; }
+    .void__copy .big { font-size: var(--sc-t-xl); }
+    .void__copy p { font-size: var(--sc-t-base); }
+    .void__fig { height: auto; width: calc(100vw - 2 * var(--sc-gutter) - 4.25rem); margin: 0 0 0 var(--sc-gutter); align-self: start; max-height: 58svh; }
+    .ruler { width: 3.5rem; left: calc(100% + 0.6rem); }
+    .ruler__sub { display: none; }
+    .model__grid { grid-template-columns: 1fr; grid-template-areas: "text" "fig" "ctl"; row-gap: var(--sc-5); }
+    .model__frame { aspect-ratio: 1 / 1; }
+    .model__ctl { max-width: none; margin-top: 0; }
+    .end { padding-block: var(--sc-8) 6.5rem; }
+    .end__fig .frame { aspect-ratio: 4 / 3; }
+    .colophon { gap: var(--sc-3) var(--sc-5); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .title__grid, .title__draw, .title__stamp { transform: none !important; }
+    .void__frame img { transform: scale(1.02); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================================================= FOLIO: the plan -->
+<nav class="folio" id="folio" aria-label="Percurso pela casa">
+  <button class="folio__toggle" type="button" aria-expanded="false" aria-controls="folio-panel">
+    <svg class="plan folio__mini" viewBox="90 470 950 1250" aria-hidden="true" focusable="false"></svg>
+    <span class="folio__head"><span class="folio__no mono" data-folio-no>Capa</span><span class="folio__name" data-folio-name>Casa MC</span></span>
+  </button>
+  <div class="folio__panel" id="folio-panel">
+    <div class="folio__head" aria-live="polite"><span class="folio__no mono" data-folio-no>Capa</span><span class="folio__name" data-folio-name>Casa MC</span></div>
+    <svg class="plan" id="plan" tabindex="-1" focusable="false" viewBox="90 470 950 1250" role="group" aria-label="Planta do piso térreo. Escolha um espaço para ir até ele.">
+      <g id="plan-art">
+        <rect class="lot" x="96" y="476" width="938" height="1236"/>
+        <rect class="garage" x="685" y="575" width="345" height="1060"/>
+        <!-- walls, traced from the ground-floor plan -->
+        <path class="wall" d="M120 490 H460 V745 H685 V1225 H575 V1340 H460 V1420 H112 V490"/>
+        <path class="wall wall--thin" d="M120 745 H340 M120 945 H340 M120 1060 H340 M120 1225 H460 M340 745 V1225 M410 945 V1225 M345 945 H500 M460 1225 V1340"/>
+        <path class="wall wall--thin" d="M330 1420 V1560 H580 V1340"/>
+        <path class="north" d="M985 1560 l0 -90 m-18 30 l18 -30 l18 30"/>
+        <text x="972" y="1600">N</text>
+        <!-- the four places the tour visits, as links -->
+        <a href="#chegada" data-room="chegada" aria-label="Chegada"><rect class="room-hit" x="330" y="1420" width="250" height="285"/></a>
+        <a href="#entrada" data-room="entrada" aria-label="Entrada"><rect class="room-hit" x="460" y="1225" width="115" height="195"/></a>
+        <a href="#cozinha" data-room="cozinha" aria-label="Cozinha e jantar"><rect class="room-hit" x="120" y="745" width="565" height="200"/></a>
+        <a href="#sala" data-room="sala" aria-label="Sala de estar"><rect class="room-hit" x="410" y="945" width="275" height="280"/></a>
+        <path class="trace" d=""/>
+        <circle class="dot-halo" r="34" cx="455" cy="1700"/>
+        <circle class="dot" r="15" cx="455" cy="1700"/>
+      </g>
+      <path id="plan-route" fill="none" stroke="none" d="M455 1700 L455 1450 L515 1285 L378 1180 L378 1000 L230 850 L515 850 L500 960 L548 1085"/>
+    </svg>
+    <ol class="folio__index">
+      <li><a href="#capa"><span>00</span>Capa</a></li>
+      <li><a href="#chegada"><span>01</span>Chegada</a></li>
+      <li><a href="#entrada"><span>02</span>Entrada</a></li>
+      <li><a href="#cozinha"><span>03</span>Cozinha e jantar</a></li>
+      <li><a href="#sala"><span>04</span>Sala</a></li>
+      <li><a href="#maquete"><span>05</span>Maquete 3D</a></li>
+      <li><a href="#ficha"><span>06</span>Ficha e contacto</a></li>
+    </ol>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ============================================== TITLE PAGE · curiosity -->
+  <section class="ch title" id="capa" data-sc-act="pin" data-sc-span="1.9"
+           data-chapter="Capa" data-name="Casa MC" data-wp="0">
+    <div data-sc-stage>
+      <div class="title__grid" aria-hidden="true"></div>
+
+      <div class="title__draw" aria-hidden="true">
+        <svg viewBox="0 90 1600 790">
+          <!-- Alçado A, traced from the Revit elevation -->
+          <path class="el el--heavy" d="M0 858 H1600"/>
+          <path class="el el--heavy" d="M95 318 L1122 113 L1122 138 L95 343 Z"/>
+          <path class="el" d="M180 327 V858 M1037 156 V858"/>
+          <path class="el el--glass" d="M297 358 H347 V742 H297 Z"/>
+          <path class="el el--glass" d="M385 361 H596 V545 H385 Z M490 361 V545"/>
+          <path class="el" d="M360 545 H692 V557 H360 Z"/>
+          <path class="el el--thin" data-draw pathLength="1" d="M362 460 H688 M362 478 H688 M362 495 H688 M362 512 H688 M362 530 H688 M362 460 V545 M440 460 V545 M520 460 V545 M600 460 V545 M688 460 V545"/>
+          <path class="el el--glass" d="M362 623 H686 V676 H362 Z"/>
+          <path class="el" d="M700 262 H857 V483 H700 Z"/>
+          <path class="el el--thin" data-draw pathLength="1" d="M710 262 V483 M722 262 V483 M734 262 V483 M746 262 V483 M758 262 V483 M770 262 V483 M782 262 V483 M794 262 V483 M806 262 V483 M818 262 V483 M830 262 V483 M842 262 V483"/>
+          <path class="el el--heavy" d="M707 483 H847 V800 H707 Z"/>
+          <path class="el el--thin" data-draw pathLength="1" d="M710 588 H844 M710 625 H844 M710 662 H844 M710 700 H844 M710 737 H844 M737 640 V750"/>
+          <path class="el el--glass el--lit" d="M868 229 H1026 V800 H868 Z M947 229 V800 M868 437 H1026 M868 617 H1026"/>
+          <path class="el" d="M345 800 H880 V812 H345 Z M498 812 H830 V826 H498 Z M560 826 H800 V842 H560 Z M600 842 H780 V858"/>
+          <path class="el" d="M1037 545 H1540 V557 H1037 Z"/>
+          <path class="el el--thin" data-draw pathLength="1" d="M1037 460 H1540 M1037 478 H1540 M1037 495 H1540 M1037 512 H1540 M1037 530 H1540 M1120 460 V545 M1205 460 V545 M1290 460 V545 M1375 460 V545 M1460 460 V545"/>
+          <path class="el" d="M1540 330 H1552 V858 H1540 Z M18 640 H28 V858 H18 Z"/>
+          <path class="el el--thin" data-draw pathLength="1" d="M1085 712 H1235 V812 H1085 Z M1302 712 H1452 V812 H1302 Z M1080 812 V858 M1240 812 V858 M1297 812 V858 M1457 812 V858"/>
+          <!-- scale figure by the steps -->
+          <path class="el el--thin" data-draw pathLength="1" d="M560 800 V722 M548 722 H572 V690 Q572 664 560 664 Q548 664 548 690 Z M554 800 V760 M566 800 V760"/>
+          <g class="cotas">
+          <g style="--co: var(--co1, 0)">
+            <!-- door: 1,60 x 3,65 m (P01, memória descritiva) -->
+            <path class="cota" d="M697 483 V800 M689 491 L705 475 M689 808 L705 792 M692 483 H707 M692 800 H707"/>
+            <text class="cota-t" x="690" y="590" transform="rotate(-90 690 590)" text-anchor="middle">3,65</text>
+            <path class="cota" d="M707 880 H847 M699 888 L715 872 M839 888 L855 872 M707 866 V888 M847 866 V888"/>
+            <text class="cota-t" x="777" y="916" text-anchor="middle">1,60</text>
+          </g>
+          <g style="--co: var(--co2, 0)">
+            <!-- roof: single pitch, 20 % (memória descritiva) -->
+            <path class="cota" d="M520 230 L520 168 L830 168"/>
+            <circle cx="520" cy="231" r="4" fill="#1B8ABD"/>
+            <text class="cota-t--lead" x="540" y="158">cobertura de água única, 20 %</text>
+          </g>
+          </g>
+        </svg>
+      </div>
+
+      <div class="title__copy">
+        <a class="brand" href="#capa" aria-label="Aschip, início"><img src="assets/aschip-marca.png" width="160" height="130" alt=""><span>Aschip</span></a>
+        <h1>Casa <b>MC</b></h1>
+        <p class="title__lede">Uma moradia de dois pisos em Angola. Faça o percurso, da rua até à sala.</p>
+      </div>
+
+      <aside class="title__stamp" aria-label="Carimbo do desenho">
+        <p class="mono"><b>Alçado A</b></p>
+        <p class="mono">Casa MC · moradia unifamiliar</p>
+        <p class="mono">Angola · Aschip</p>
+      </aside>
+    </div>
+  </section>
+
+  <div class="page-chapters">
+
+  <!-- =============================================== 01 CHEGADA · recognition -->
+  <section class="ch ch--paper arrive" id="chegada" data-sc-act="flow"
+           data-chapter="Capítulo 01" data-name="Chegada" data-wp="1">
+    <div class="page">
+      <div class="arrive__grid">
+        <div class="arrive__text sc-stack" data-sc-in data-sc-stagger="70">
+          <h2 class="ch-title">Chegada</h2>
+          <p>Da rua, a casa lê-se num só gesto: uma cobertura inclinada que se prolonga em consola sobre a fachada.</p>
+          <p>Volumes claros, painéis ripados de madeira e grandes vãos de vidro. A garagem cobre duas viaturas e fica dentro do mesmo volume.</p>
+        </div>
+        <figure data-sc-in>
+          <div class="frame arrive__frame">
+            <img data-sc-parallax="-1.1" src="assets/chegada.webp"
+                 srcset="assets/chegada-m.webp 900w, assets/chegada.webp 1440w" sizes="(max-width: 860px) 92vw, 60vw"
+                 width="1440" height="960" alt="A Casa MC vista da rua: volume branco de dois pisos sob uma cobertura inclinada, porta alta de madeira, muro baixo e garagem à direita.">
+          </div>
+          <figcaption class="mono"><b>Alçado principal</b> · vista da rua</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================= 02 ENTRADA · invitation -->
+  <section class="ch ch--stone door" id="entrada" data-sc-act="flow"
+           data-chapter="Capítulo 02" data-name="Entrada" data-wp="2">
+    <div class="page">
+      <div class="door__grid">
+        <div class="door__media">
+          <figure data-sc-reveal="right" data-sc-reveal-at="0.12 0.5" class="frame door__main">
+            <img src="assets/porta.webp" srcset="assets/porta-m.webp 800w, assets/porta.webp 1260w" sizes="(max-width: 860px) 86vw, 55vw"
+                 width="1260" height="840" alt="A porta pivotante de madeira, muito alta, entre o reboco claro, uma palmeira e a guarda metálica da varanda.">
+          </figure>
+          <figure class="frame door__inset" data-sc-in>
+            <img src="assets/degraus.webp" width="1200" height="800" loading="lazy"
+                 alt="Os degraus de betão que sobem do jardim até à porta, vistos de cima.">
+          </figure>
+        </div>
+        <div class="door__text sc-stack" data-sc-in data-sc-stagger="70">
+          <h2 class="ch-title">Entrada</h2>
+          <p>Sobem-se os degraus e a porta faz o resto. É pivotante, roda sobre um eixo e abre a casa de uma só vez.</p>
+          <dl class="door__spec">
+            <div><dt class="mono">Largura</dt><dd>1,60 m</dd></div>
+            <div><dt class="mono">Altura</dt><dd>3,65 m</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== 03 COZINHA · warmth -->
+  <section class="ch ch--paper social" id="cozinha" data-sc-act="pan" data-sc-span="2.9"
+           data-chapter="Capítulo 03" data-name="Cozinha e jantar" data-wp="3">
+    <div data-sc-stage>
+      <div class="rail" data-sc-pan="0.04">
+        <div class="rail__lead">
+          <h2 class="ch-title">Cozinha e jantar</h2>
+          <p>A zona social fica toda no térreo. A cozinha abre-se para a mesa, e a mesa abre-se para o jardim.</p>
+        </div>
+        <figure class="room">
+          <div class="frame"><img src="assets/cozinha.webp" width="1400" height="788" loading="lazy"
+               alt="A cozinha em madeira escura com uma janela longa e horizontal sobre a bancada, iluminada por luz quente."></div>
+          <figcaption class="mono"><b>Cozinha</b> · 13,01 m²</figcaption>
+        </figure>
+        <figure class="room room--tall">
+          <div class="frame"><img src="assets/ilha.webp" width="1400" height="932" loading="lazy"
+               alt="A ilha da cozinha com bancos altos, ao lado do frigorífico e dos armários de madeira."></div>
+          <figcaption class="mono"><b>Ilha</b> · entre a cozinha e a mesa</figcaption>
+        </figure>
+        <figure class="room">
+          <div class="frame"><img src="assets/jantar.webp" width="1400" height="932" loading="lazy"
+               alt="A sala de jantar: mesa oval clara, cadeiras de madeira e uma porta de vidro de altura inteira para o jardim."></div>
+          <figcaption class="mono"><b>Sala de jantar</b> · 12,87 m²</figcaption>
+        </figure>
+        <p class="rail__note">Do outro lado da parede, a sala de estar. É aí que a casa muda de escala.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================== PAUSA · authored silence -->
+  <section class="ch ch--white hush" id="pausa" data-chapter="Capítulo 04" data-name="Sala" data-wp="4" aria-label="Pausa">
+    <div data-sc-in>
+      <p>Agora, olhe para cima.</p>
+      <span class="hush__tick" aria-hidden="true"></span>
+    </div>
+  </section>
+
+  <!-- ============================================== 04 SALA · awe (the peak) -->
+  <section class="ch ch--night void" id="sala" data-sc-act="pin" data-sc-span="3.6"
+           data-chapter="Capítulo 04" data-name="Sala" data-wp="5">
+    <div data-sc-stage>
+      <div class="void__copy">
+        <div data-sc-cue="0 0.44 0">
+          <h2 class="ch-title">Sala de estar</h2>
+          <p>21,98 m² no chão. Por cima, nada até ao tecto do piso de cima.</p>
+        </div>
+        <div data-sc-cue="0.4 1 0.12 0.06">
+          <p class="big">O vazio de pé-direito duplo liga os dois pisos e traz luz natural ao centro da casa.</p>
+          <p>O piso superior debruça-se sobre a sala a +3,60. Por cima da sala ficam 26,29 m² de ar.</p>
+        </div>
+      </div>
+      <figure class="void__fig">
+        <div class="void__frame">
+          <img src="assets/sala.webp" width="1080" height="1440"
+               alt="A sala de estar de pé-direito duplo: sofá cinzento em baixo e, lá no alto, a guarda metálica do piso superior debruçada sobre o vazio.">
+        </div>
+        <div class="leader" aria-hidden="true"></div>
+        <div class="ruler" aria-hidden="true">
+          <span class="ruler__line"></span>
+          <span class="ruler__mark ruler__mark--base">±0,00</span>
+          <span class="ruler__mark ruler__mark--level">+3,60<br><span class="ruler__sub">piso superior</span></span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ========================================= 05 MAQUETE · understanding -->
+  <section class="ch ch--stone model" id="maquete" data-sc-act="flow"
+           data-chapter="Capítulo 05" data-name="Maquete 3D" data-wp="6">
+    <div class="page">
+      <div class="model__grid">
+        <div class="model__text sc-stack" data-sc-in data-sc-stagger="70">
+          <h2 class="ch-title">Maquete</h2>
+          <p>O modelo do projecto, tirado do Revit. Rode a casa, baixe o plano de corte para a ver piso a piso, ou entre em <em>Passeio</em> e percorra-a à altura dos olhos.</p>
+        </div>
+        <figure class="model__fig">
+          <div class="frame model__frame" id="model-frame">
+            <img class="model__poster" src="assets/maquete-poster.webp" width="1400" height="1050" loading="lazy"
+                 alt="Maquete 3D da Casa MC vista da rua, entre árvores de maquete: volumes brancos, cobertura inclinada, painéis de madeira e grandes vãos de vidro.">
+            <canvas id="model-canvas" role="img" aria-label="Maquete 3D interactiva da Casa MC. Use os controlos ao lado: modo, plano de corte, rotação, percurso e zoom."></canvas>
+            <p class="model__status mono" id="model-status" role="status">A carregar a maquete…</p>
+          </div>
+          <figcaption class="mono"><b>Modelo Revit</b> · materiais simplificados · árvores e vegetação de maquete, indicativas<span class="model__hint"> · arraste para rodar</span></figcaption>
+        </figure>
+          <div class="model__ctl" role="group" aria-label="Controlos da maquete">
+            <div class="model__modes" role="group" aria-label="Modo de visualização">
+              <button type="button" class="model__mode" data-mode="orbit" aria-pressed="true" disabled>Maquete</button>
+              <button type="button" class="model__mode" data-mode="walk" aria-pressed="false" disabled>Passeio</button>
+            </div>
+
+            <div class="model__pane" data-pane="orbit">
+              <div class="model__row">
+                <label for="cut" class="mono">Plano de corte</label>
+                <output id="cut-out" for="cut" class="mono">sem corte</output>
+              </div>
+              <input id="cut" type="range" min="0" max="2" step="0.01" value="0" disabled aria-describedby="cut-ticks">
+              <div class="model__ticks mono" id="cut-ticks"><span>Cobertura</span><span>Piso superior</span><span>Piso térreo</span></div>
+              <div class="model__row model__row--gap">
+                <label for="turn" class="mono">Rodar</label>
+              </div>
+              <input id="turn" type="range" min="-180" max="180" step="1" value="0" disabled>
+            </div>
+
+            <div class="model__pane" data-pane="walk" hidden>
+              <div class="model__row">
+                <label for="walk" class="mono">Percurso</label>
+                <output id="walk-out" for="walk" class="mono">Rua</output>
+              </div>
+              <input id="walk" type="range" min="0" max="1" step="0.001" value="0" disabled aria-describedby="walk-ticks">
+              <div class="model__ticks mono" id="walk-ticks"><span>Rua</span><span>Sala</span><span>Cozinha</span></div>
+              <div class="model__row model__row--gap">
+                <button type="button" id="walk-play" class="model__btn" aria-pressed="false" disabled>Andar</button>
+                <span class="mono model__tip">Arraste a imagem para olhar à volta</span>
+              </div>
+            </div>
+
+            <div class="model__row model__row--gap model__zoom">
+              <span class="mono" id="zoom-label">Zoom</span>
+              <span class="model__zoombtns" role="group" aria-labelledby="zoom-label">
+                <button type="button" id="zoom-out" class="model__btn model__btn--sq" aria-label="Afastar" disabled>&minus;</button>
+                <button type="button" id="zoom-in" class="model__btn model__btn--sq" aria-label="Aproximar" disabled>+</button>
+                <button type="button" id="zoom-reset" class="model__btn" disabled>Repor</button>
+              </span>
+            </div>
+          </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== 06 FICHA · resolve (close) -->
+  <section class="ch ch--paper end" id="ficha" data-sc-act="flow"
+           data-chapter="Capítulo 06" data-name="Ficha e contacto" data-wp="7">
+    <div class="page">
+      <figure class="end__fig" data-sc-in>
+        <div class="frame"><img src="assets/entardecer.webp" srcset="assets/entardecer-m.webp 900w, assets/entardecer.webp 1440w" sizes="(max-width: 860px) 92vw, 75vw"
+             width="1440" height="960" loading="lazy" style="object-position: 50% 62%"
+             alt="A casa ao fim da tarde, vista do quintal: luz quente nas janelas do térreo e o terraço com guarda metálica no piso de cima."></div>
+        <figcaption class="mono"><b>Fim da tarde</b> · vista do quintal, marquise e terraço</figcaption>
+      </figure>
+
+      <div class="end__grid">
+        <div data-sc-in>
+          <h2 class="end__claim">A Aschip desenha casas onde a luz e o espaço foram pensados ao centímetro.</h2>
+          <p class="end__ask">Se quer uma casa pensada assim, <a id="cta" href="https://wa.me/244929179424?text=Ol%C3%A1%20Aschip%2C%20vi%20a%20Casa%20MC%20e%20quero%20falar%20sobre%20um%20projecto." rel="noopener">Falar com a Aschip</a> no WhatsApp.</p>
+        </div>
+        <table class="ficha" data-sc-in>
+          <caption class="mono">Ficha da casa</caption>
+          <tr><th>Programa</th><td>Moradia unifamiliar, 2 pisos</td></tr>
+          <tr><th>Piso térreo</th><td>186,44 m²</td></tr>
+          <tr><th>Piso superior</th><td>170,45 m²</td></tr>
+          <tr><th>Vazio sobre a sala</th><td>26,29 m²</td></tr>
+          <tr><th>Garagem</th><td>78,64 m², 2 viaturas</td></tr>
+          <tr><th>Cobertura</th><td>Chapa de zinco, 20 %</td></tr>
+          <tr><th>Pavimento</th><td>Porcelanato 90 × 90 cm</td></tr>
+        </table>
+      </div>
+
+      <footer class="colophon mono">
+        <img src="assets/aschip-marca.png" width="160" height="130" alt="Aschip">
+        <p>Aschip, gabinete de arquitectura · Angola</p>
+        <p>Imagens: renders do projecto Casa MC. Desenhos: Aschip.</p>
+        <p><a href="#capa">Voltar à rua</a></p>
+      </footer>
+    </div>
+  </section>
+
+  </div>
+</main>
+
+<script>
+  // Reduced motion: keep every state, drop the extra pinned travel.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll('[data-sc-act="pin"]').forEach(function (s) { s.setAttribute('data-sc-span', '1.25'); });
+  }
+</script>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/addons/"
+} }
+</script>
+<script src="scrollcraft.js"></script>
+<script>ScrollCraft.mount(document.body);</script>
+<script type="module" src="maquete.js"></script>
+<script>
+/* ===========================================================================
+   Casa MC, page-local choreography. The engine stays untouched; everything
+   here reads --sc-p off the acts or the page scroll.
+   =========================================================================== */
+(function () {
+  'use strict';
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fine = matchMedia('(hover: hover) and (pointer: fine)');
+  var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+  var seg = function (p, a, b) { return clamp((p - a) / (b - a), 0, 1); };
+  var ease = function (t) { return 1 - Math.pow(1 - t, 3); };
+  var P = function (el) { var v = parseFloat(el.style.getPropertyValue('--sc-p')); return isNaN(v) ? 0 : v; };
+
+  var title = document.getElementById('capa');
+  var drawStage = title.querySelector('[data-sc-stage]');
+  var draws = title.querySelectorAll('.el[data-draw]');
+  var sala = document.getElementById('sala');
+  var salaFig = sala.querySelector('.void__fig');
+  var rail = document.querySelector('.rail');
+  var rooms = rail ? rail.querySelectorAll('.room') : [];
+  var social = document.getElementById('cozinha');
+
+  /* ---- the title page: an elevation that draws itself, in four planes ---- */
+  var mx = 0, my = 0, tx = 0, ty = 0;
+  if (!reduce) addEventListener('pointermove', function (e) {
+    if (!fine.matches) return;
+    tx = (e.clientX / innerWidth - 0.5); ty = (e.clientY / innerHeight - 0.5);
+  }, { passive: true });
+
+  function titleFrame() {
+    var p = reduce ? 1 : P(title);
+    // the outline is there on landing; the details draw with the hand
+    var base = reduce ? 1 : 0;
+    draws.forEach(function (el, i) {
+      var start = (i / draws.length) * 0.5;
+      var d = base + (1 - base) * ease(seg(p, start, start + 0.38));
+      el.style.setProperty('--d', d.toFixed(3));
+    });
+    drawStage.style.setProperty('--glass', reduce ? 1 : ease(seg(p, 0.5, 0.9)).toFixed(3));
+    drawStage.style.setProperty('--co1', reduce ? 1 : ease(seg(p, 0.08, 0.4)).toFixed(3));
+    drawStage.style.setProperty('--co2', reduce ? 1 : ease(seg(p, 0.35, 0.7)).toFixed(3));
+    if (reduce) return;
+    mx += (tx - mx) * 0.08; my += (ty - my) * 0.08;
+    // far grid lags, drawing moves a little, cotas (near) move most
+    drawStage.style.setProperty('--gx', (mx * -10).toFixed(2) + 'px');
+    drawStage.style.setProperty('--gy', (p * -40 + my * -8).toFixed(2) + 'px');
+    drawStage.style.setProperty('--dx', (mx * -18).toFixed(2) + 'px');
+    drawStage.style.setProperty('--dy', (p * -70 + my * -12).toFixed(2) + 'px');
+    drawStage.style.setProperty('--fx', (mx * -34).toFixed(2) + 'px');
+    drawStage.style.setProperty('--fy', (p * -120 + my * -22).toFixed(2) + 'px');
+  }
+
+  /* ---- the peak: the room opens upward, a ruler climbs to +3,60 ---- */
+  var LEVEL_Y = 0.41;   // where the upper-floor slab sits in this render
+  function salaFrame() {
+    var p = reduce ? 1 : P(sala);
+    var open = ease(seg(p, 0.06, 0.78));
+    var top = 0.62 * (1 - open);
+    salaFig.style.setProperty('--open-top', top.toFixed(4));
+    salaFig.style.setProperty('--tilt', (1 - open).toFixed(4));
+    salaFig.style.setProperty('--level-y', (LEVEL_Y * 100).toFixed(1) + '%');
+    salaFig.style.setProperty('--level-o', reduce ? 1 : seg(open, 0.62, 0.8).toFixed(3));
+  }
+
+  /* ---- the rail: rooms settle in sequence as the drawer is pulled ---- */
+  function railFrame() {
+    if (reduce || !rooms.length) return;
+    var p = P(social);
+    rooms.forEach(function (r, i) {
+      var s = i === 0 ? 1 : ease(seg(p, 0.12 + i * 0.22, 0.34 + i * 0.22));
+      r.style.setProperty('--settle', s.toFixed(3));
+    });
+  }
+
+  /* ---- SIGNATURE: the living plan. A red dot walks the real ground floor ---- */
+  var folio = document.getElementById('folio');
+  var route = document.getElementById('plan-route');
+  // The phone plate carries a static copy of the plan: links become plain groups.
+  var mini = folio.querySelector('.folio__mini');
+  var art = document.getElementById('plan-art').cloneNode(true);
+  art.removeAttribute('id');
+  art.querySelectorAll('a').forEach(function (a) {
+    var g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('data-room', a.getAttribute('data-room'));
+    while (a.firstChild) g.appendChild(a.firstChild);
+    a.parentNode.replaceChild(g, a);
+  });
+  mini.appendChild(art);
+  var dots = folio.querySelectorAll('.dot, .dot-halo');
+  var traces = folio.querySelectorAll('.trace');
+  var chapters = Array.prototype.slice.call(document.querySelectorAll('[data-wp]'));
+  var hits = {};
+  folio.querySelectorAll('[data-room]').forEach(function (a) {
+    var r = a.getAttribute('data-room');
+    (hits[r] = hits[r] || []).push(a.querySelector('.room-hit'));
+  });
+  var indexLinks = folio.querySelectorAll('.folio__index a');
+  var noEls = folio.querySelectorAll('[data-folio-no]'), nameEls = folio.querySelectorAll('[data-folio-name]');
+
+  // Waypoint lengths along the route, one per chapter (data-wp order).
+  var total = route.getTotalLength();
+  var pts = [[455,1700],[455,1450],[515,1285],[378,1180],[378,1000],[230,850],[515,850],[500,960],[548,1085]];
+  var cum = [0];
+  for (var i = 1; i < pts.length; i++) cum.push(cum[i-1] + Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]));
+  //            capa  chegada  entrada  cozinha  pausa   sala   ficha
+  var wpLen = [cum[0], cum[1], cum[2],  cum[5],  cum[7], cum[8], cum[8], cum[8]];
+  var roomOf = [null, 'chegada', 'entrada', 'cozinha', 'cozinha', 'sala', null, null];
+  var seen = {};
+  var shown = 0, lastIdx = -1;
+
+  function tops() {
+    return chapters.map(function (c) { return c.getBoundingClientRect().top + scrollY; });
+  }
+  var T = tops();
+  addEventListener('resize', function () { T = tops(); });
+  addEventListener('load', function () { T = tops(); });
+
+  function pointsUpTo(len) {
+    var d = 'M' + pts[0][0] + ' ' + pts[0][1];
+    for (var i = 1; i < pts.length; i++) {
+      if (cum[i] <= len) { d += ' L' + pts[i][0] + ' ' + pts[i][1]; continue; }
+      var t = (len - cum[i-1]) / (cum[i] - cum[i-1]);
+      if (t > 0) d += ' L' + (pts[i-1][0] + (pts[i][0]-pts[i-1][0]) * t).toFixed(1) + ' ' + (pts[i-1][1] + (pts[i][1]-pts[i-1][1]) * t).toFixed(1);
+      break;
+    }
+    return d;
+  }
+
+  function planFrame() {
+    var y = scrollY + innerHeight * 0.5;
+    var idx = 0;
+    for (var i = 0; i < T.length; i++) if (y >= T[i]) idx = i;
+    var next = Math.min(idx + 1, T.length - 1);
+    var t = next === idx ? 1 : clamp((y - T[idx]) / (T[next] - T[idx]), 0, 1);
+    // dwell on each place, then walk to the next in the last stretch of the chapter
+    var walk = ease(seg(t, 0.55, 1));
+    var target = wpLen[idx] + (wpLen[next] - wpLen[idx]) * walk;
+    if (y < T[0] + innerHeight * 0.5) target = 0;
+    shown += (target - shown) * (reduce ? 1 : 0.14);
+    if (Math.abs(target - shown) < 0.2) shown = target;
+    var pt = route.getPointAtLength(Math.min(shown, total));
+    dots.forEach(function (d) { d.setAttribute('cx', pt.x.toFixed(1)); d.setAttribute('cy', pt.y.toFixed(1)); });
+    var td = pointsUpTo(shown);
+    traces.forEach(function (t) { t.setAttribute('d', td); });
+
+    if (idx !== lastIdx) {
+      lastIdx = idx;
+      var c = chapters[idx];
+      noEls.forEach(function (n) { n.textContent = c.getAttribute('data-chapter'); });
+      nameEls.forEach(function (n) { n.textContent = c.getAttribute('data-name'); });
+      var here = roomOf[idx];
+      for (var k = 0; k <= idx; k++) if (roomOf[k]) seen[roomOf[k]] = true;
+      Object.keys(hits).forEach(function (r) {
+        hits[r].forEach(function (h) {
+          h.classList.toggle('is-seen', !!seen[r] && r !== here);
+          h.classList.toggle('is-here', r === here);
+        });
+      });
+      var hash = '#' + (c.id === 'pausa' ? 'sala' : c.id);
+      indexLinks.forEach(function (a) {
+        if (a.getAttribute('href') === hash) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current');
+      });
+    }
+  }
+
+  // Phone: the plate opens into the full plan; choosing a place closes it.
+  var toggle = folio.querySelector('.folio__toggle');
+  toggle.addEventListener('click', function () {
+    var open = folio.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  folio.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a) return;
+    folio.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false');
+  });
+  addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && folio.classList.contains('is-open')) { folio.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); }
+  });
+
+  function frame() {
+    titleFrame(); salaFrame(); railFrame(); planFrame();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
